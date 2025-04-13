@@ -1,1 +1,139 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WNSS - Anonymous Sharing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .post-form {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .post-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: #444;
+            color: white;
+        }
+        .post-button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .post-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .post {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 10px;
+            animation: fadeIn 0.5s;
+        }
+        .post-content {
+            margin: 10px 0;
+        }
+        .post-time {
+            color: #777;
+            font-size: 0.9em;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .hidden { display: none; }
+        video {
+            max-width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WNSS</h1>
+    <div class="post-form">
+        <textarea class="post-input" placeholder="Share something..." rows="3"></textarea>
+        <input type="file" class="post-input" accept="image/*,video/*" onchange="previewFile()">
+        <button class="post-button" onclick="submitPost()">Post Anonymously</button>
+    </div>
+    <div class="post-container" id="posts"></div>
+
+    <script>
+        let mediaURL = null;
+
+        function previewFile() {
+            const file = document.querySelector('input[type=file]').files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mediaURL = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function submitPost() {
+            const text = document.querySelector('.post-input').value.trim();
+            if (!text && !mediaURL) return;
+
+            const post = {
+                id: Date.now(),
+                text: text,
+                media: mediaURL,
+                time: new Date().toLocaleString()
+            };
+
+            // Save to local storage
+            const existing = JSON.parse(localStorage.getItem('posts')) || [];
+            existing.unshift(post);
+            localStorage.setItem('posts', JSON.stringify(existing));
+
+            // Reset form
+            document.querySelector('.post-input').value = '';
+            mediaURL = null;
+
+            loadPosts();
+        }
+
+        function loadPosts() {
+            const postsContainer = document.getElementById('posts');
+            postsContainer.innerHTML = '';
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+
+            posts.forEach(post => {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post';
+                postDiv.innerHTML = `
+                    <div class="post-content">${post.text}</div>
+                    ${post.media ? 
+                        (post.media.startsWith('data:image') ? 
+                            `<img src="${post.media}" class="post-media">` : 
+                            `<video controls><source src="${post.media}" type="video/mp4"></video>`) 
+                        : ''}
+                    <div class="post-time">${post.time}</div>
+                `;
+                postsContainer.appendChild(postDiv);
+            });
+        }
+
+        // Initial load
+        loadPosts();
+    </script>
+</body>
+</html>
